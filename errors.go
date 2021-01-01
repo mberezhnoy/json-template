@@ -1,6 +1,9 @@
 package json_template
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type RuntimeError struct {
 	Err error
@@ -30,6 +33,10 @@ type ParseError struct {
 func (e ParseError) Error() string {
 	return fmt.Sprintf("[%d:%d] %s", e.Pos.line, e.Pos.offset, e.Msg)
 }
+
+var ErrIncorrectName = errors.New("Incorrect name")
+var ErrNotFunction = errors.New("Value is not a function")
+var ErrIncorrectFunction = errors.New("Incorrect function")
 
 const (
 	ErrParseNumber               = "error in numeric token"

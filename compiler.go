@@ -9,7 +9,7 @@ import (
 )
 
 type compiler struct {
-	deps           *TemplateDeps
+	deps           *Options
 	vmCode         []vmCmd
 	opCode         []opCode
 	name2dataPtr   map[string]vmFnArg
@@ -85,23 +85,17 @@ func (c *compiler) init() error {
 }
 
 func (c *compiler) initDeps() error {
-	if c.deps.Prototype != nil {
+	if c.deps.prototype != nil {
 		c.initPrototype()
 	}
-	for name, val := range c.deps.Const {
+	for name, val := range c.deps.constants {
 		err := c.initNamedConst(name, val)
 		if err != nil {
 			return err
 		}
 	}
-	for name, content := range c.deps.StrTml {
+	for name, content := range c.deps.strTml {
 		err := c.initNamedConst(name, content)
-		if err != nil {
-			return err
-		}
-	}
-	for name, fn := range c.deps.Func {
-		err := c.validateDepsFunc(name, fn)
 		if err != nil {
 			return err
 		}
@@ -112,7 +106,7 @@ func (c *compiler) initDeps() error {
 
 func (c *compiler) initPrototype() {
 	cid := len(c.constData)
-	c.constData = append(c.constData, reflect.ValueOf(c.deps.Prototype))
+	c.constData = append(c.constData, reflect.ValueOf(c.deps.prototype))
 	fn, _ := c.getFunctionId("@clone")
 	c.vmCode = append(c.vmCode, vmCmd{
 		cmd:    vmCmdCall,
@@ -122,15 +116,12 @@ func (c *compiler) initPrototype() {
 	})
 }
 
-var rxName = regexp.MustCompile("^[a-zA-Z][_0-9a-zA-Z]$")
+var rxName = regexp.MustCompile("^[a-zA-Z][_0-9a-zA-Z]*$")
 
 func (c *compiler) initNamedConst(name string, val interface{}) error {
-	if !rxName.MatchString(name) || name == "result" || name == "args" {
-		return fmt.Errorf("incorrect name `%s` for const", name)
-	}
 	cid := len(c.constData)
 	c.constData = append(c.constData, reflect.ValueOf(val))
-	c.name2dataPtr["result"] = vmFnArg{0, cid}
+	c.name2dataPtr[name] = vmFnArg{0, cid}
 	return nil
 }
 
@@ -138,27 +129,13 @@ func (c *compiler) initStrTml(name, content string) error {
 	if !rxName.MatchString(name) {
 		return fmt.Errorf("incorrect name `%s` for string template", name)
 	}
-	t, err := template.New(name).Funcs(c.deps.StrFunc).Parse(content)
+	t, err := template.New(name).Funcs(c.deps.strFunc).Parse(content)
 	if err != nil {
 		return err
 	}
 	cid := len(c.constData)
 	c.constData = append(c.constData, reflect.ValueOf(t))
 	c.name2dataPtr["%"+name] = vmFnArg{0, cid}
-	return nil
-}
-
-func (c *compiler) validateDepsFunc(name string, fn interface{}) error {
-	if !rxName.MatchString(name) {
-		return fmt.Errorf("incorrect name `%s` for function", name)
-	}
-	rFn := reflect.ValueOf(fn)
-	if rFn.Kind() != reflect.Func {
-		return fmt.Errorf("`%s` is not function", name)
-	}
-	if rFn.IsNil() {
-		return fmt.Errorf(" function `%s` is nil", name)
-	}
 	return nil
 }
 
@@ -169,10 +146,10 @@ func (c *compiler) getFunctionId(name string) (int, error) {
 	}
 	id = len(c.functions)
 
-	if c.deps != nil && c.deps.Func != nil {
-		fn, ok := c.deps.Func[name]
+	if c.deps != nil && c.deps.functions != nil {
+		fn, ok := c.deps.functions[name]
 		if ok {
-			c.functions = append(c.functions, reflect.ValueOf(fn))
+			c.functions = append(c.functions, fn)
 			return id, nil
 		}
 	}

@@ -98,7 +98,7 @@ func (b *opCodeBuilder) makeIfT(varName string, thenCode []opCode) []opCode {
 		%code%
 		@end
 	*/
-	code := make([]opCode, len(thenCode)+2)
+	code := make([]opCode, 0, len(thenCode)+2)
 	lblEnd := b.newId()
 	code = append(code, opCode{
 		cmd:    vmCmdJmpIfEmpty,
@@ -124,7 +124,7 @@ func (b *opCodeBuilder) makeIfTE(varName string, thenCode, elseCode []opCode) []
 		%code%
 		@end
 	*/
-	code := make([]opCode, len(thenCode)+len(elseCode)+4)
+	code := make([]opCode, 0, len(thenCode)+len(elseCode)+4)
 	lblElse := b.newId()
 	lblEnd := b.newId()
 	code = append(code, opCode{
@@ -157,7 +157,7 @@ func (b *opCodeBuilder) makeIfE(varName string, elseCode []opCode) []opCode {
 		%code%
 		@end
 	*/
-	code := make([]opCode, len(elseCode)+2)
+	code := make([]opCode, 0, len(elseCode)+2)
 	lblEnd := b.newId()
 	code = append(code, opCode{
 		cmd:    vmCmdJmpIfNotEmpty,
@@ -190,7 +190,7 @@ func (b *opCodeBuilder) buildFor(node *astNode) []opCode {
 	lblHead := b.newId()
 	lblEnd := b.newId()
 
-	code := make([]opCode, len(condCode)+len(clearTmp)+len(actCode)+4)
+	code := make([]opCode, 0, len(condCode)+len(clearTmp)+len(actCode)+4)
 	code = append(code, opCode{
 		cmd:    opCmdLabel,
 		target: lblHead,

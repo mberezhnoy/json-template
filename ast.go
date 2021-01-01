@@ -39,6 +39,22 @@ type astNode struct {
 	child      []*astNode
 }
 
+func (a *astNode) String() string {
+	return a.str("")
+}
+
+func (a *astNode) str(ident string) string {
+	if a == nil {
+		return ident + "nil\n"
+	}
+	res := ident + a.cmd.String() + " " + a.data + "\n"
+	ident = ident + "  "
+	for _, child := range a.child {
+		res += child.str(ident)
+	}
+	return res
+}
+
 type astParser struct {
 	cur    int
 	tokens []token
