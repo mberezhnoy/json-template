@@ -20,11 +20,11 @@ const (
 	charBracketSC = 93
 	charSlash     = 92
 	charQuote     = 34
-	charBackQuote = 96
+	charPercent   = 37
 	charNewLine   = 10
 	charSpace     = 32
 	charEqual     = 61
-	charPercent   = 37
+	//charXXXPercent   = 37
 )
 
 var charMap [256]byte
@@ -50,10 +50,9 @@ func init() {
 	charMap[charBracketSC] = charBracketSC
 	charMap[charSlash] = charSlash
 	charMap[charQuote] = charQuote
-	charMap[charBackQuote] = charBackQuote
+	charMap[charPercent] = charPercent
 	charMap[charNewLine] = charNewLine
 	charMap[charEqual] = charEqual
-	charMap[charPercent] = charPercent
 	charMap[charSpace] = charSpace
 	charMap[9] = charSpace
 	charMap[11] = charSpace
@@ -252,7 +251,7 @@ func (t *tokenizer) walkIfStateNone() error {
 	case charQuote:
 		t.tokenStart = t.cur
 		t.state = tokenizerStateString
-	case charBackQuote:
+	case charPercent:
 		return t.openObject()
 	case charDot:
 		t.tokens = append(t.tokens, token{
@@ -311,7 +310,7 @@ func (t *tokenizer) openObject() error {
 			}
 		}
 		char := data[i]
-		if char == charBackQuote {
+		if char == charPercent {
 			break
 		}
 		ct := charMap[char]
@@ -376,7 +375,7 @@ func (t *tokenizer) walkIfStateString() {
 func (t *tokenizer) walkIfStateObject() {
 	char := t.data[t.cur.offset]
 	ct := charMap[char]
-	if char == charBackQuote && bytes.HasPrefix(t.data[t.cur.offset:], t.objQuote) {
+	if char == charPercent && bytes.HasPrefix(t.data[t.cur.offset:], t.objQuote) {
 		data := t.data[t.dataStart.offset:t.cur.offset]
 		t.cur.inc(len(t.objQuote))
 		t.tokens = append(t.tokens, token{

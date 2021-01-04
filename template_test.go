@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-const codeSample1 = `result=` + "``" + `{"x":null}` + "``" + ` 
+const codeSample1 = `result=%%{"x":null}%% 
 	if args.x
 		result.x = args.x 
 	end

@@ -45,7 +45,7 @@ func TestTokenize1(t *testing.T) {
 }
 
 func TestTokenize2(t *testing.T) {
-	data := "``{dddddd}``-1.34"
+	data := `%%{dddddd}%%-1.34`
 	tokens, err := tokenize([]byte(data))
 	if err != nil {
 		t.Fatalf("err=%v", err)
@@ -68,7 +68,7 @@ func TestTokenize2(t *testing.T) {
 
 }
 func TestTokenize3(t *testing.T) {
-	data := "32 xx()`x`{\"s\":\"``\"}`x`"
+	data := `32 xx()%x%{"s":"%%"}%x%`
 	tokens, err := tokenize([]byte(data))
 	if err != nil {
 		t.Fatalf("err=%v", err)
@@ -97,7 +97,7 @@ func TestTokenize3(t *testing.T) {
 	if tokens[4].token != tokenObject {
 		t.Fatal("token 4 type")
 	}
-	if string(tokens[4].data) != "{\"s\":\"``\"}" {
+	if string(tokens[4].data) != "{\"s\":\"%%\"}" {
 		t.Fatal("token 4 content")
 	}
 }
@@ -159,7 +159,7 @@ func TestTokenize6(t *testing.T) {
 }
 
 func TestTokenize7(t *testing.T) {
-	data := "xx = `y"
+	data := "xx = %y"
 	_, err := tokenize([]byte(data))
 	if err == nil {
 		t.Fatal("err is nil")
@@ -173,7 +173,7 @@ func TestTokenize7(t *testing.T) {
 	}
 }
 func TestTokenize8(t *testing.T) {
-	data := "xx = ``{}"
+	data := "xx = %%{}"
 	_, err := tokenize([]byte(data))
 	if err == nil {
 		t.Fatal("err is nil")
@@ -201,7 +201,7 @@ func TestTokenize9(t *testing.T) {
 	}
 }
 func TestTokenize10(t *testing.T) {
-	data := "`@`{}`@`"
+	data := "%@%{}%@%"
 	_, err := tokenize([]byte(data))
 	if err == nil {
 		t.Fatal("err is nil")
@@ -298,11 +298,11 @@ func TestTokenize13(t *testing.T) {
 
 func TestTokenize14(t *testing.T) {
 	data := `
-    result = ` + "``" + `{
+    result = %%{
 			"obj":{}, 
 			"arr":[], 
 			"info": "test template"
-		}` + "``" + `
+		}%%
     x
 	`
 	tokens, err := tokenize([]byte(data))

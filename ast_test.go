@@ -94,7 +94,7 @@ func TestAst2(t *testing.T) {
 }
 
 func TestAst3(t *testing.T) {
-	code := `result.xxx.yyy =  ` + "``" + `["zzz"]` + "``" + ``
+	code := `result.xxx.yyy =  %%["zzz"]%%`
 	node, err := text2Ast(code)
 	if err != nil {
 		t.Fatalf("err=%v", err)

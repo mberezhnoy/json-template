@@ -8,11 +8,11 @@ import (
 
 func main() {
 	tml := `
-	result = ` + "``" + `{
+	result = %%{
 			"obj":{}, 
 			"arr":[], 
 			"info": "test template"
-		}` + "``" + `
+		}%%
 	for k v in args
 		result.obj[k] = v
 		result.arr[] = v
