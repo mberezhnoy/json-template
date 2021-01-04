@@ -321,5 +321,4 @@ func TestTokenize14(t *testing.T) {
 	if pos.line != 7 || pos.column != 4 {
 		t.Fatal("Incorrect token position", pos)
 	}
-
 }

@@ -66,6 +66,7 @@ func (b *opCodeBuilder) buildCodeBlock(node *astNode) []opCode {
 }
 
 func (b *opCodeBuilder) buildIf(node *astNode) []opCode {
+	pos := node.child[0].start
 	condVar, code := b.buildDataPrimitive(node.child[0])
 	code = append(code, b.freeTmpVars(condVar)...)
 
@@ -77,20 +78,20 @@ func (b *opCodeBuilder) buildIf(node *astNode) []opCode {
 		if len(elseCode) == 0 {
 			return nil
 		} else {
-			code2 = b.makeIfE(condVar, elseCode)
+			code2 = b.makeIfE(condVar, elseCode, pos)
 		}
 	} else {
 		if len(elseCode) == 0 {
-			code2 = b.makeIfT(condVar, thenCode)
+			code2 = b.makeIfT(condVar, thenCode, pos)
 		} else {
-			code2 = b.makeIfTE(condVar, thenCode, elseCode)
+			code2 = b.makeIfTE(condVar, thenCode, elseCode, pos)
 		}
 	}
 
 	return append(code, code2...)
 }
 
-func (b *opCodeBuilder) makeIfT(varName string, thenCode []opCode) []opCode {
+func (b *opCodeBuilder) makeIfT(varName string, thenCode []opCode, pos Position) []opCode {
 	/*
 		build code for construction: if var {%code%}
 		commands:
@@ -104,6 +105,7 @@ func (b *opCodeBuilder) makeIfT(varName string, thenCode []opCode) []opCode {
 		cmd:    vmCmdJmpIfEmpty,
 		target: lblEnd,
 		fnArgs: []string{varName},
+		pos:    pos,
 	})
 	code = append(code, thenCode...)
 	code = append(code, opCode{
@@ -113,7 +115,7 @@ func (b *opCodeBuilder) makeIfT(varName string, thenCode []opCode) []opCode {
 	return code
 }
 
-func (b *opCodeBuilder) makeIfTE(varName string, thenCode, elseCode []opCode) []opCode {
+func (b *opCodeBuilder) makeIfTE(varName string, thenCode, elseCode []opCode, pos Position) []opCode {
 	/*
 		build code for construction: if var {%code%} else {%code%}
 		commands:
@@ -130,12 +132,14 @@ func (b *opCodeBuilder) makeIfTE(varName string, thenCode, elseCode []opCode) []
 	code = append(code, opCode{
 		cmd:    vmCmdJmpIfEmpty,
 		target: lblElse,
+		pos:    pos,
 		fnArgs: []string{varName},
 	})
 	code = append(code, thenCode...)
 	code = append(code, opCode{
 		cmd:    vmCmdJmp,
 		target: lblEnd,
+		pos:    pos,
 	})
 	code = append(code, opCode{
 		cmd:    opCmdLabel,
@@ -149,7 +153,7 @@ func (b *opCodeBuilder) makeIfTE(varName string, thenCode, elseCode []opCode) []
 	return code
 }
 
-func (b *opCodeBuilder) makeIfE(varName string, elseCode []opCode) []opCode {
+func (b *opCodeBuilder) makeIfE(varName string, elseCode []opCode, pos Position) []opCode {
 	/*
 		build code for construction: if var {} else {%code%}
 		commands:
@@ -163,6 +167,7 @@ func (b *opCodeBuilder) makeIfE(varName string, elseCode []opCode) []opCode {
 		cmd:    vmCmdJmpIfNotEmpty,
 		target: lblEnd,
 		fnArgs: []string{varName},
+		pos:    pos,
 	})
 	code = append(code, elseCode...)
 	code = append(code, opCode{
@@ -201,11 +206,13 @@ func (b *opCodeBuilder) buildFor(node *astNode) []opCode {
 		cmd:    vmCmdJmpIfEmpty,
 		target: lblEnd,
 		fnArgs: []string{condVar},
+		pos:    node.start,
 	})
 	code = append(code, actCode...)
 	code = append(code, opCode{
 		cmd:    vmCmdJmp,
 		target: lblHead,
+		pos:    node.start,
 	})
 	code = append(code, opCode{
 		cmd:    opCmdLabel,
@@ -258,6 +265,7 @@ func (b *opCodeBuilder) buildForeach(node *astNode) []opCode {
 		target: varIterator,
 		fn:     fnName,
 		fnArgs: []string{dataVar},
+		pos:    node.start,
 	})
 
 	//check foreach condition
@@ -270,12 +278,14 @@ func (b *opCodeBuilder) buildForeach(node *astNode) []opCode {
 		target: varCondition,
 		fn:     "@iteratorStep",
 		fnArgs: []string{varIterator},
+		pos:    node.start,
 	})
 	code = append(code, b.freeTmpVars(varCondition)...)
 	code = append(code, opCode{
 		cmd:    vmCmdJmpIfEmpty,
 		target: lblEnd,
 		fnArgs: []string{varCondition},
+		pos:    node.start,
 	})
 
 	//set key, val
@@ -285,6 +295,7 @@ func (b *opCodeBuilder) buildForeach(node *astNode) []opCode {
 			target: keyName,
 			fn:     "@iteratorKey",
 			fnArgs: []string{varIterator},
+			pos:    node.start,
 		})
 	}
 	if valName != "" {
@@ -293,6 +304,7 @@ func (b *opCodeBuilder) buildForeach(node *astNode) []opCode {
 			target: valName,
 			fn:     "@iteratorVal",
 			fnArgs: []string{varIterator},
+			pos:    node.start,
 		})
 	}
 
@@ -304,6 +316,7 @@ func (b *opCodeBuilder) buildForeach(node *astNode) []opCode {
 	code = append(code, opCode{
 		cmd:    vmCmdJmp,
 		target: lblHead,
+		pos:    node.start,
 	})
 	code = append(code, opCode{
 		cmd:    opCmdLabel,
@@ -324,6 +337,7 @@ func (b *opCodeBuilder) buildSetVar(node *astNode) []opCode {
 		target: varName,
 		fn:     "@clone",
 		fnArgs: []string{dataVar},
+		pos:    node.start,
 	})
 	return code
 }
@@ -366,6 +380,7 @@ func (b *opCodeBuilder) dataStrTemplate(node *astNode) (string, []opCode) {
 		target: target,
 		fn:     "@strTemplate",
 		fnArgs: []string{templateName, argName},
+		pos:    node.start,
 	})
 	return target, code
 }
@@ -386,6 +401,7 @@ func (b *opCodeBuilder) dataFunction(node *astNode) (string, []opCode) {
 		target: target,
 		fn:     fnName,
 		fnArgs: args,
+		pos:    node.start,
 	})
 	return target, code
 
@@ -407,6 +423,7 @@ func (b *opCodeBuilder) dataVarPath(node *astNode) (string, []opCode) {
 		target: target,
 		fn:     "@get",
 		fnArgs: path,
+		pos:    node.start,
 	})
 	return target, code
 }
@@ -447,6 +464,7 @@ func (b *opCodeBuilder) buildJsonOperation(fn string, node *astNode) []opCode {
 		target: varName,
 		fn:     fn,
 		fnArgs: append([]string{varName, varData}, pathVars...),
+		pos:    node.start,
 	})
 	code = append(code, b.freeTmpVars(varData)...)
 	code = append(code, b.freeTmpVars(pathVars...)...)

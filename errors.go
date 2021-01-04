@@ -11,7 +11,7 @@ type RuntimeError struct {
 }
 
 func (e RuntimeError) Error() string {
-	return fmt.Sprintf("[%d:%d] %s", e.Pos.line, e.Pos.offset, e.Err.Error())
+	return fmt.Sprintf("[%d:%d] %s", e.Pos.line, e.Pos.column, e.Err.Error())
 }
 
 type Position struct {
