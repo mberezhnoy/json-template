@@ -37,6 +37,9 @@ func ParseTemplate(deps *Options, code string) (*Template, error) {
 }
 
 func (t *Template) Execute(params interface{}) (interface{}, error) {
+	if params == nil {
+		params = json.RawMessage(`null`)
+	}
 	v := vm{}
 	v.data[0] = t.constData
 	v.data[1] = make([]reflect.Value, t.varDataSize)

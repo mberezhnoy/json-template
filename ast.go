@@ -295,15 +295,15 @@ loop:
 		if a.cur >= len(a.tokens) {
 			break loop
 		}
-		if a.cur+1 >= len(a.tokens) {
-			return nil, ParseError{
-				Msg: ErrUnexpectedConstructionEnd,
-				Pos: t.start,
-			}
-		}
 		t := a.tokens[a.cur]
 		switch t.token {
 		case tokenDot:
+			if a.cur+1 >= len(a.tokens) {
+				return nil, ParseError{
+					Msg: ErrUnexpectedConstructionEnd,
+					Pos: t.start,
+				}
+			}
 			t := a.tokens[a.cur+1]
 			if t.token != tokenWord {
 				return nil, ParseError{
@@ -322,6 +322,12 @@ loop:
 			node.end = t.end
 			a.cur += 2
 		case tokenBracketSO:
+			if a.cur+1 >= len(a.tokens) {
+				return nil, ParseError{
+					Msg: ErrUnexpectedConstructionEnd,
+					Pos: t.start,
+				}
+			}
 			t := a.tokens[a.cur]
 			if a.tokens[a.cur+1].token == tokenBracketSC {
 				break loop

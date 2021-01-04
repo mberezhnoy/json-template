@@ -25,6 +25,9 @@ func init() {
 	buildInFunctions["@jsonSet"] = reflect.ValueOf(jsonSet)
 	buildInFunctions["@append"] = reflect.ValueOf(jsonAppend)
 	buildInFunctions["@clone"] = reflect.ValueOf(clone)
+
+	buildInFunctions["eq"] = reflect.ValueOf(eq)
+	buildInFunctions["sum"] = reflect.ValueOf(sum)
 }
 
 func clone(v interface{}) (interface{}, error) {
@@ -185,7 +188,7 @@ func jsonSet(data, val interface{}, path ...interface{}) (interface{}, error) {
 	}
 
 	//todo: optimization
-	d, err := json.Marshal(val)
+	d, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
@@ -379,4 +382,89 @@ func iteratorValue(i *iterator) interface{} {
 		return nil
 	}
 	return i.values[i.cur]
+}
+
+func eq(v1, v2 interface{}) (bool, error) {
+	var err error
+	jr, ok := v1.(json.RawMessage)
+	if ok {
+		err = json.Unmarshal(jr, &v1)
+		if err != nil {
+			return false, err
+		}
+	}
+	jr, ok = v2.(json.RawMessage)
+	if ok {
+		err := json.Unmarshal(jr, &v2)
+		if err != nil {
+			return false, err
+		}
+	}
+	rv1 := reflect.ValueOf(v1)
+	rv2 := reflect.ValueOf(v2)
+	if rv1.Type() == rv2.Type() {
+		return reflect.DeepEqual(rv1, rv2), nil
+	}
+
+	err = marshalUnmarshal(v1, &v1)
+	if err != nil {
+		return false, err
+	}
+	err = marshalUnmarshal(v2, &v2)
+	if err != nil {
+		return false, err
+	}
+	return reflect.DeepEqual(rv1, rv2), nil
+}
+
+func marshalUnmarshal(in interface{}, out interface{}) error {
+	data, err := json.Marshal(in)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &out)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func sum(v1, v2 interface{}) (interface{}, error) {
+	var iv1, iv2 int
+	allInt := true
+	iv1, allInt = v1.(int)
+	if allInt {
+		iv2, allInt = v2.(int)
+	}
+	if allInt {
+		return iv1 + iv2, nil
+	}
+
+	var fv1, fv2 float64
+	allFloat := true
+	fv1, allFloat = v1.(float64)
+	if allFloat {
+		fv2, allFloat = v2.(float64)
+	}
+	if allFloat {
+		return fv1 + fv2, nil
+	}
+
+	err := marshalUnmarshal(v1, &iv1)
+	if err == nil {
+		err := marshalUnmarshal(v2, &iv2)
+		if err == nil {
+			return iv1 + iv2, nil
+		}
+	}
+
+	err = marshalUnmarshal(v1, &fv1)
+	if err != nil {
+		return 0, fmt.Errorf("first argument is not numeric")
+	}
+	err = marshalUnmarshal(v2, &fv2)
+	if err != nil {
+		return 0, fmt.Errorf("second argument is not numeric")
+	}
+	return fv1 + fv2, nil
 }
