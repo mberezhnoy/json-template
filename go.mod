@@ -1,3 +1,3 @@
-module github.org/mberezhnoy/json-template
+module github.com/mberezhnoy/json-template
 
 go 1.15

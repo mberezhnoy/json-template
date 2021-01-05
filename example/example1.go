@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.org/mberezhnoy/json-template"
+	"github.com/mberezhnoy/json-template"
 )
 
 func main() {
