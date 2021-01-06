@@ -28,6 +28,10 @@ func init() {
 
 	buildInFunctions["eq"] = reflect.ValueOf(eq)
 	buildInFunctions["sum"] = reflect.ValueOf(sum)
+
+	buildInFunctions["or"] = reflect.ValueOf(or)
+	buildInFunctions["and"] = reflect.ValueOf(and)
+	buildInFunctions["not"] = reflect.ValueOf(not)
 }
 
 func clone(v interface{}) (interface{}, error) {
@@ -467,4 +471,26 @@ func sum(v1, v2 interface{}) (interface{}, error) {
 		return 0, fmt.Errorf("second argument is not numeric")
 	}
 	return fv1 + fv2, nil
+}
+
+func or(list ...interface{}) bool {
+	for _, v := range list {
+		if !isEmpty(reflect.ValueOf(v)) {
+			return true
+		}
+	}
+	return false
+}
+
+func and(list ...interface{}) bool {
+	for _, v := range list {
+		if isEmpty(reflect.ValueOf(v)) {
+			return false
+		}
+	}
+	return true
+}
+
+func not(v interface{}) bool {
+	return !isEmpty(reflect.ValueOf(v))
 }

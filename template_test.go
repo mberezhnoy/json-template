@@ -73,3 +73,35 @@ func TestTemplate1(t *testing.T) {
 	}
 	checkExecuteRes(res, `{"x":123}`)
 }
+
+func TestTemplateBoolFunc(t *testing.T) {
+	code := `
+	if or(args.x, args.y)
+		result.or = args.x
+    end
+	result.and = and(args.x, args.y)
+	result.not = not(args.x)
+	`
+	tml, err := ParseTemplate(nil, code)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := tml.Execute(map[string]interface{}{"x": "", "y": false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkExecuteRes(res, `{"and":false, "not": true}`)
+
+	res, err = tml.Execute(map[string]interface{}{"y": 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkExecuteRes(res, `{"or":null,"and":false, "not": true}`)
+
+	res, err = tml.Execute(map[string]interface{}{"x": 1, "y": "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkExecuteRes(res, `{"or":1,"and":true, "not": false}`)
+}
