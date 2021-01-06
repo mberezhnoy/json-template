@@ -23,7 +23,7 @@ func checkExecuteRes(res interface{}, expect string) error {
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal([]byte(expect), v2)
+	err = json.Unmarshal([]byte(expect), &v2)
 	if err != nil {
 		return err
 	}
@@ -43,25 +43,37 @@ func TestTemplate1(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkExecuteRes(res, `{"x":null}`)
+	err = checkExecuteRes(res, `{"x":null}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	res, err = tml.Execute(`{"x":2}`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkExecuteRes(res, `{"x":null}`)
+	err = checkExecuteRes(res, `{"x":null}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	res, err = tml.Execute(json.RawMessage(`{"x":[1,2,3]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkExecuteRes(res, `{"x":[1,2,3]`)
+	err = checkExecuteRes(res, `{"x":[1,2,3]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	res, err = tml.Execute(map[string]string{"x": "y"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkExecuteRes(res, `{"x":"y"}`)
+	err = checkExecuteRes(res, `{"x":"y"}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var args struct {
 		X int `json:"x"`
@@ -71,7 +83,10 @@ func TestTemplate1(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkExecuteRes(res, `{"x":123}`)
+	err = checkExecuteRes(res, `{"x":123}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestTemplateBoolFunc(t *testing.T) {
@@ -91,17 +106,96 @@ func TestTemplateBoolFunc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkExecuteRes(res, `{"and":false, "not": true}`)
+	err = checkExecuteRes(res, `{"and":false, "not": true}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	res, err = tml.Execute(map[string]interface{}{"y": 1})
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkExecuteRes(res, `{"or":null,"and":false, "not": true}`)
+	err = checkExecuteRes(res, `{"or":null,"and":false, "not": true}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	res, err = tml.Execute(map[string]interface{}{"x": 1, "y": "1"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkExecuteRes(res, `{"or":1,"and":true, "not": false}`)
+	err = checkExecuteRes(res, `{"or":1,"and":true, "not": false}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTemplateIfArgs(t *testing.T) {
+	code := `result=0 if args.x result=1 end`
+	tml, err := ParseTemplate(nil, code)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := tml.Execute(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `0`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = tml.Execute(map[string]interface{}{"x": ""})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `0`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = tml.Execute(map[string]interface{}{"x": "xx"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `1`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = tml.Execute(map[string]interface{}{"x": []int{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `0`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = tml.Execute(map[string]interface{}{"x": []int{0}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `1`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = tml.Execute(map[string]interface{}{"x": json.RawMessage(` [ ] `)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `0`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = tml.Execute(map[string]interface{}{"x": json.RawMessage(`[false]`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `1`)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

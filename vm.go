@@ -1,6 +1,8 @@
 package json_template
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"reflect"
 )
@@ -122,22 +124,45 @@ func safeCall(fun reflect.Value, args []reflect.Value) (val reflect.Value, err e
 	return ret[0], nil
 }
 
+var nilVal reflect.Value
+
 func isEmpty(val reflect.Value) bool {
-	//todo: correct work with json.RawMessage & struct
 	if !val.IsValid() {
 		return true
 	}
-	switch val.Kind() {
-	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
-		return val.Len() == 0
-	case reflect.Bool:
-		return !val.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return val.Int() == 0
-	case reflect.Float32, reflect.Float64:
-		return val.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return val.Uint() == 0
+	for val.Kind() == reflect.Interface {
+		val = val.Elem()
+		if val == nilVal {
+			return true
+		}
 	}
-	return false
+
+	switch val.Kind() {
+	case reflect.Slice:
+		if val.Len() == 0 {
+			return true
+		}
+		jrm, ok := val.Interface().(json.RawMessage)
+		if ok {
+			return isEmptyJson(jrm)
+		}
+		return false
+	case reflect.Map:
+		return val.Len() == 0
+	}
+
+	return val.IsZero()
+}
+
+func isEmptyJson(msg json.RawMessage) bool {
+	data := bytes.TrimSpace(msg)
+	switch string(data[0]) {
+	case `null`, `false`, `0`, `""`:
+		return true
+	}
+	if (data[0] == '{' && data[len(data)-1] == '}') ||
+		(data[0] == '[' && data[len(data)-1] == ']') {
+		data = bytes.TrimSpace(data[1 : len(data)-1])
+	}
+	return len(data) == 0
 }

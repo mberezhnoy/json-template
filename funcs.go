@@ -492,5 +492,5 @@ func and(list ...interface{}) bool {
 }
 
 func not(v interface{}) bool {
-	return !isEmpty(reflect.ValueOf(v))
+	return isEmpty(reflect.ValueOf(v))
 }
