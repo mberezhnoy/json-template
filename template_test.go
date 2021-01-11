@@ -199,3 +199,41 @@ func TestTemplateIfArgs(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTemplateFuncArgType(t *testing.T) {
+	deps := NewOptions()
+	err := deps.Func("f", func(x string) string {
+		return "A" + x
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := `result=f(args.x)`
+	tml, err := ParseTemplate(deps, code)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := tml.Execute(map[string]interface{}{"x": "x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `"Ax"`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = tml.Execute(map[string]interface{}{"x": json.RawMessage(`"y"`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = checkExecuteRes(res, `"Ay"`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = tml.Execute(map[string]interface{}{"x": json.RawMessage(`[1]`)})
+	if err == nil {
+		t.Fatal("incorrect type conversation")
+	}
+	//todo: position should be [1:9] - incorrect func arg
+}

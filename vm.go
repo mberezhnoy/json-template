@@ -92,10 +92,15 @@ func (v *vm) doCmd() error {
 }
 
 func (v *vm) cmdCall(cmd vmCmd) error {
+	var err error
 	fn := v.functions[cmd.fn]
+	typ := fn.Type()
 	args := make([]reflect.Value, len(cmd.fnArgs))
 	for i, ptr := range cmd.fnArgs {
-		args[i] = v.data[ptr.isVar][ptr.dataId]
+		args[i], err = v.callArg(ptr, v.fnArgType(typ, i))
+		if err != nil {
+			return err
+		}
 	}
 	res, err := safeCall(fn, args)
 	if err != nil {
@@ -103,6 +108,41 @@ func (v *vm) cmdCall(cmd vmCmd) error {
 	}
 	v.data[1][cmd.target] = res
 	return nil
+}
+
+func (v *vm) fnArgType(typ reflect.Type, i int) reflect.Type {
+	lastArg := typ.NumIn() - 1
+	if typ.IsVariadic() && i >= lastArg {
+		return typ.In(lastArg).Elem()
+	}
+
+	return typ.In(i)
+}
+
+func (v *vm) callArg(ptr vmFnArg, typ reflect.Type) (reflect.Value, error) {
+	arg := v.data[ptr.isVar][ptr.dataId]
+	argTyp := arg.Type()
+	if argTyp.AssignableTo(typ) {
+		return arg, nil
+	}
+	if argTyp.Kind() == reflect.Interface {
+		arg = arg.Elem()
+		argTyp = arg.Type()
+	}
+
+	if argTyp == rawMsgType {
+		rv := reflect.New(typ)
+		rm := arg.Interface().(json.RawMessage)
+		err := json.Unmarshal(rm, rv.Interface())
+		if err != nil {
+			return arg, fmt.Errorf("convert arg error: %v", err)
+		}
+		return rv.Elem(), nil
+	}
+	if arg.Type().ConvertibleTo(typ) {
+		return arg.Convert(typ), nil
+	}
+	return arg, fmt.Errorf("incorect arg type, expect: %s got: %s", typ, argTyp)
 }
 
 // safeCall runs fun.Call(args), and returns the resulting value and error, if
@@ -125,6 +165,7 @@ func safeCall(fun reflect.Value, args []reflect.Value) (val reflect.Value, err e
 }
 
 var nilVal reflect.Value
+var rawMsgType = reflect.TypeOf(json.RawMessage{})
 
 func isEmpty(val reflect.Value) bool {
 	if !val.IsValid() {
