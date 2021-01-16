@@ -70,14 +70,17 @@ If pipeline values outside of array length then array will be extended.
 
 examples:
 ```
-result=["a", "b", "c"] result[1] = "d"  
-  output: ["a", "d", "c"] 
-result=["a", "b", "c"] result[-1] = "d"  
-  output: ["a", "b", "d"] 
-result=["a", "b", "c"] result[5] = "d"  
-  output: ["a", "b", "c", null, null, "d"] 
-result=["a", "b", "c"] result[-5] = "d"  
-  output: ["d", null "a", "b", "c"] 
+template: result=["a", "b", "c"] result[1] = "d"  
+output: ["a", "d", "c"]
+ 
+template: result=["a", "b", "c"] result[-1] = "d"  
+output: ["a", "b", "d"]
+ 
+template: result=["a", "b", "c"] result[5] = "d"  
+template: output: ["a", "b", "c", null, null, "d"]
+ 
+template: result=["a", "b", "c"] result[-5] = "d"  
+output: ["d", null "a", "b", "c"] 
 ```
  
 - **array append**
@@ -208,6 +211,7 @@ output:
 ```
 
 `opt.StringTemplate(name, tml)` - create `text/template` and allow call it inside json template
+
 `opt.StringFunctions(funcMap)` - https://golang.org/pkg/text/template/#Template.Funcs
 
 ## Object Declaration
@@ -245,6 +249,7 @@ t, err := json_template.ParseTemplate(opt, code)
 ```  
 
 `opt.Prototype(someJson)` - result will init with this value
+
 `opt.Const(name, someJson)` - add const for use in template
 
 This allow move object declaration outside of template, and keep in template just code for json manipulation. 
