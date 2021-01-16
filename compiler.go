@@ -95,7 +95,7 @@ func (c *compiler) initDeps() error {
 		}
 	}
 	for name, content := range c.deps.strTml {
-		err := c.initNamedConst(name, content)
+		err := c.initStrTml(name, content)
 		if err != nil {
 			return err
 		}
